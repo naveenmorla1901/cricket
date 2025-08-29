@@ -340,25 +340,46 @@
     <script>
         class CricketStatsApp {
             constructor() {
+                console.log('🚀 Starting CricketStatsApp...');
                 this.data = {};
                 this.filteredData = {};
                 this.currentTab = 'batting';
                 this.filters = {
                     team: '',
                     matchType: '',
-                    year: '2025'  // Default to 2025
+                    year: '2025'
                 };
-                
-                this.init();
             }
 
             async init() {
+                console.log('📋 Initializing app...');
+                
+                // Check if elements exist
+                this.checkElements();
+                
+                // Setup event listeners
                 this.setupEventListeners();
+                
+                // Load data
                 await this.loadData();
+                
+                // Render current tab
                 this.renderCurrentTab();
             }
 
+            checkElements() {
+                const elements = ['batting-summary', 'batting-table', 'bowling-summary', 'bowling-table', 
+                                'fielding-summary', 'fielding-table', 'ranking-summary', 'ranking-table'];
+                
+                elements.forEach(id => {
+                    const element = document.getElementById(id);
+                    console.log(`${element ? '✅' : '❌'} ${id}`);
+                });
+            }
+
             setupEventListeners() {
+                console.log('🔗 Setting up event listeners...');
+                
                 // Tab switching
                 document.querySelectorAll('.tab-header').forEach(header => {
                     header.addEventListener('click', (e) => {
@@ -366,36 +387,50 @@
                     });
                 });
 
-                // Filter changes
-                document.getElementById('teamFilter').addEventListener('change', (e) => {
-                    this.filters.team = e.target.value;
-                    this.applyFilters();
-                });
+                // Filter events
+                const teamFilter = document.getElementById('teamFilter');
+                const matchTypeFilter = document.getElementById('matchTypeFilter');
+                const yearFilter = document.getElementById('yearFilter');
+                const refreshBtn = document.getElementById('refreshBtn');
 
-                document.getElementById('matchTypeFilter').addEventListener('change', (e) => {
-                    this.filters.matchType = e.target.value;
-                    this.applyFilters();
-                });
+                if (teamFilter) {
+                    teamFilter.addEventListener('change', (e) => {
+                        this.filters.team = e.target.value;
+                        console.log('Team filter changed:', this.filters.team || 'All Teams');
+                        this.applyFilters();
+                    });
+                }
 
-                document.getElementById('yearFilter').addEventListener('change', (e) => {
-                    this.filters.year = e.target.value;
-                    this.loadData();
-                });
+                if (matchTypeFilter) {
+                    matchTypeFilter.addEventListener('change', (e) => {
+                        this.filters.matchType = e.target.value;
+                        console.log('Match type filter changed:', this.filters.matchType || 'All Types');
+                        this.applyFilters();
+                    });
+                }
 
-                // Refresh button
-                document.getElementById('refreshBtn').addEventListener('click', () => {
-                    console.log('Manual refresh triggered');
-                    this.loadData();
-                });
+                if (yearFilter) {
+                    yearFilter.addEventListener('change', (e) => {
+                        this.filters.year = e.target.value;
+                        console.log('Year changed:', this.filters.year);
+                        this.loadData();
+                    });
+                }
+
+                if (refreshBtn) {
+                    refreshBtn.addEventListener('click', () => {
+                        console.log('Manual refresh triggered');
+                        this.loadData();
+                    });
+                }
             }
 
             async loadData() {
                 try {
+                    console.log('📥 Loading data for year:', this.filters.year);
                     this.showLoading();
                     
                     const year = this.filters.year;
-                    console.log(`Loading data for year: ${year}`);
-                    
                     const responses = await Promise.all([
                         fetch(`./data/batting_${year}.json`).catch(e => ({ ok: false, error: e })),
                         fetch(`./data/bowling_${year}.json`).catch(e => ({ ok: false, error: e })),
@@ -409,7 +444,7 @@
                             if (response.ok) {
                                 try {
                                     const data = await response.json();
-                                    console.log(`Loaded ${statTypes[index]}:`, data);
+                                    console.log(`✅ Loaded ${statTypes[index]}:`, data.data ? data.data.length : 0, 'records');
                                     return data;
                                 } catch (jsonError) {
                                     console.warn(`JSON parse error for ${statTypes[index]}:`, jsonError);
@@ -423,7 +458,7 @@
                     );
 
                     this.data = { batting, bowling, fielding, ranking };
-                    console.log('All data loaded:', this.data);
+                    console.log('All data loaded successfully');
                     
                     this.setupFilterOptions();
                     this.applyFilters();
@@ -431,39 +466,44 @@
 
                 } catch (error) {
                     console.error('Error loading data:', error);
-                    this.showError('Failed to load cricket statistics. Please check that data files exist in the data/ folder.');
+                    this.showError('Failed to load cricket statistics. Please check that data files exist.');
                 }
             }
 
             showLoading() {
-                document.querySelectorAll('.tab-pane').forEach(pane => {
-                    pane.innerHTML = '<div class="loading">Loading statistics...</div>';
+                console.log('Showing loading state...');
+                const tabs = ['batting', 'bowling', 'fielding', 'ranking'];
+                
+                tabs.forEach(tab => {
+                    const summaryEl = document.getElementById(`${tab}-summary`);
+                    if (summaryEl) {
+                        summaryEl.innerHTML = '<div class="loading">Loading statistics...</div>';
+                    }
+                    
+                    const table = document.getElementById(`${tab}-table`);
+                    if (table) {
+                        const tbody = table.querySelector('tbody');
+                        if (tbody) {
+                            tbody.innerHTML = '<tr><td colspan="100%" class="loading">Loading data...</td></tr>';
+                        }
+                    }
                 });
             }
 
             showError(message) {
-                document.querySelectorAll('.tab-pane').forEach(pane => {
-                    pane.innerHTML = `<div class="error">${message}</div>`;
+                console.log('Showing error:', message);
+                const tabs = ['batting', 'bowling', 'fielding', 'ranking'];
+                
+                tabs.forEach(tab => {
+                    const summaryEl = document.getElementById(`${tab}-summary`);
+                    if (summaryEl) {
+                        summaryEl.innerHTML = `<div class="error">❌ ${message}</div>`;
+                    }
                 });
             }
 
-            updateLastUpdated() {
-                const lastUpdated = Object.values(this.data)
-                    .map(d => d.lastUpdated)
-                    .filter(d => d)
-                    .sort()
-                    .pop();
-
-                if (lastUpdated) {
-                    document.getElementById('lastUpdated').textContent = 
-                        `Last updated: ${new Date(lastUpdated).toLocaleString()}`;
-                } else {
-                    document.getElementById('lastUpdated').textContent = '';
-                }
-            }
-
             setupFilterOptions() {
-                console.log('Setting up filter options with actual data...');
+                console.log('🎛️ Setting up filter options...');
                 
                 const allTeams = new Set();
                 const allMatchTypes = new Set();
@@ -471,11 +511,9 @@
                 Object.values(this.data).forEach(dataset => {
                     if (dataset.data) {
                         dataset.data.forEach(row => {
-                            // Check multiple possible field names for team
                             const team = row.Team || row.team;
                             if (team) allTeams.add(team);
                             
-                            // Check multiple possible field names for match type
                             const matchType = row.Match_Type || row.match_type;
                             if (matchType) allMatchTypes.add(matchType);
                         });
@@ -485,13 +523,16 @@
                 this.populateFilter('teamFilter', Array.from(allTeams).sort());
                 this.populateFilter('matchTypeFilter', Array.from(allMatchTypes).sort());
                 
-                console.log(`Filter options setup - Teams: ${allTeams.size}, Match Types: ${allMatchTypes.size}`);
-                console.log('Available Teams:', Array.from(allTeams).join(', '));
-                console.log('Available Match Types:', Array.from(allMatchTypes).join(', '));
+                console.log(`✅ Filter options setup - Teams: ${allTeams.size}, Match Types: ${allMatchTypes.size}`);
             }
 
             populateFilter(filterId, options) {
                 const filter = document.getElementById(filterId);
+                if (!filter) {
+                    console.warn(`Filter element not found: ${filterId}`);
+                    return;
+                }
+                
                 const currentValue = filter.value;
                 
                 // Keep the "All" option
@@ -510,6 +551,8 @@
             }
 
             applyFilters() {
+                console.log('🔍 Applying filters...', this.filters);
+                
                 this.filteredData = {};
                 
                 Object.keys(this.data).forEach(statType => {
@@ -529,10 +572,15 @@
                     });
                 });
 
+                console.log('🔍 Filter results:', Object.keys(this.filteredData).map(k => 
+                    `${k}: ${this.filteredData[k].length}/${this.data[k].data ? this.data[k].data.length : 0}`));
+
                 this.renderCurrentTab();
             }
 
             switchTab(tabName) {
+                console.log(`🔄 Switching to ${tabName}`);
+                
                 // Update active tab header
                 document.querySelectorAll('.tab-header').forEach(header => {
                     header.classList.remove('active');
@@ -550,7 +598,11 @@
             }
 
             renderCurrentTab() {
+                console.log(`🖼️ Rendering ${this.currentTab} tab...`);
+                
                 const data = this.filteredData[this.currentTab] || [];
+                console.log(`Data for ${this.currentTab}:`, data.length, 'records');
+                
                 this.renderSummary(this.currentTab, data);
                 this.renderTable(this.currentTab, data);
             }
@@ -559,7 +611,7 @@
                 const summaryElement = document.getElementById(`${statType}-summary`);
                 
                 if (!summaryElement) {
-                    console.error(`Summary element not found for: ${statType}-summary`);
+                    console.error(`❌ Summary element not found: ${statType}-summary`);
                     return;
                 }
                 
@@ -611,13 +663,14 @@
                 }
 
                 summaryElement.innerHTML = summaryHTML;
+                console.log(`✅ Summary rendered for ${statType}`);
             }
 
             renderTable(statType, data) {
                 const table = document.getElementById(`${statType}-table`);
                 
                 if (!table) {
-                    console.error(`Table element not found for: ${statType}-table`);
+                    console.error(`❌ Table element not found: ${statType}-table`);
                     return;
                 }
                 
@@ -625,7 +678,7 @@
                 const tbody = table.querySelector('tbody');
                 
                 if (!thead || !tbody) {
-                    console.error(`Table head or body not found for: ${statType}-table`);
+                    console.error(`❌ Table head or body not found for ${statType}-table`);
                     return;
                 }
 
@@ -647,20 +700,50 @@
                     </tr>
                 `;
 
-                // Render body
-                tbody.innerHTML = data.map(row => `
+                // Render body (limit to first 100 rows for performance)
+                const displayRows = Math.min(data.length, 100);
+                const rows = data.slice(0, displayRows).map(row => `
                     <tr>
                         ${visibleColumns.map(col => `<td>${row[col] || ''}</td>`).join('')}
                     </tr>
                 `).join('');
                 
-                console.log(`✅ Rendered ${data.length} rows for ${statType}`);
+                tbody.innerHTML = rows;
+                
+                if (data.length > displayRows) {
+                    tbody.innerHTML += `<tr><td colspan="${visibleColumns.length}" style="text-align: center; background: #f0f0f0; font-style: italic; padding: 10px;">Showing first ${displayRows} of ${data.length} records</td></tr>`;
+                }
+                
+                console.log(`✅ Table rendered for ${statType}: ${displayRows}/${data.length} rows`);
+            }
+
+            updateLastUpdated() {
+                const lastUpdated = Object.values(this.data)
+                    .map(d => d.lastUpdated)
+                    .filter(d => d)
+                    .sort()
+                    .pop();
+
+                const lastUpdatedEl = document.getElementById('lastUpdated');
+                if (lastUpdatedEl) {
+                    if (lastUpdated) {
+                        lastUpdatedEl.textContent = `Last updated: ${new Date(lastUpdated).toLocaleString()}`;
+                    } else {
+                        lastUpdatedEl.textContent = 'Data loaded successfully';
+                    }
+                }
             }
         }
 
         // Initialize the app when page loads
         document.addEventListener('DOMContentLoaded', () => {
-            new CricketStatsApp();
+            console.log('🌟 DOM loaded, starting app in 500ms...');
+            
+            // Small delay to ensure all elements are properly rendered
+            setTimeout(() => {
+                const app = new CricketStatsApp();
+                app.init();
+            }, 500);
         });
     </script>
 </body>
