@@ -103,6 +103,38 @@
             min-width: 250px;
         }
 
+        .team-filter-button {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            background: white;
+            cursor: pointer;
+            text-align: left;
+            transition: border-color 0.3s;
+            position: relative;
+        }
+
+        .team-filter-button:hover {
+            border-color: #667eea;
+        }
+
+        .team-filter-button::after {
+            content: '▼';
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            color: #666;
+            transition: transform 0.3s;
+        }
+
+        .team-filter-button.open::after {
+            transform: translateY(-50%) rotate(180deg);
+        }
+
         .team-dropdown {
             position: absolute;
             top: 100%;
@@ -137,10 +169,18 @@
             font-weight: 500;
         }
 
-        .team-option input {
+        .team-option input[type="checkbox"] {
             margin-right: 8px;
             min-width: auto;
             width: auto;
+            cursor: pointer;
+        }
+
+        .team-option label {
+            cursor: pointer;
+            flex: 1;
+            font-weight: normal;
+            color: #333;
         }
 
         .tabs {
@@ -370,11 +410,11 @@
             </div>
             
             <div class="filter-group">
-                <label for="teamFilter">Teams</label>
+                <label>Teams</label>
                 <div class="team-dropdown-container">
-                    <select id="teamFilter">
-                        <option value="">All Teams (Click to expand)</option>
-                    </select>
+                    <button id="teamFilterButton" class="team-filter-button">
+                        All Teams (Click to expand)
+                    </button>
                     <div id="teamDropdown" class="team-dropdown">
                         <!-- Team checkboxes will be populated here -->
                     </div>
@@ -534,23 +574,30 @@
             }
 
             setupTeamFilter() {
-                const teamFilter = document.getElementById('teamFilter');
+                const teamFilterButton = document.getElementById('teamFilterButton');
                 const teamDropdown = document.getElementById('teamDropdown');
                 
-                if (!teamFilter || !teamDropdown) return;
+                if (!teamFilterButton || !teamDropdown) return;
 
-                // Toggle dropdown
-                teamFilter.addEventListener('click', (e) => {
-                    e.preventDefault();
+                // Toggle dropdown when button is clicked
+                teamFilterButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
                     const isVisible = teamDropdown.style.display === 'block';
                     teamDropdown.style.display = isVisible ? 'none' : 'block';
+                    teamFilterButton.classList.toggle('open', !isVisible);
                 });
 
                 // Close dropdown when clicking outside
                 document.addEventListener('click', (e) => {
                     if (!e.target.closest('.team-dropdown-container')) {
                         teamDropdown.style.display = 'none';
+                        teamFilterButton.classList.remove('open');
                     }
+                });
+
+                // Prevent dropdown from closing when clicking inside it
+                teamDropdown.addEventListener('click', (e) => {
+                    e.stopPropagation();
                 });
             }
 
@@ -654,26 +701,28 @@
                 const allTeamsOption = document.createElement('div');
                 allTeamsOption.className = 'team-option';
                 allTeamsOption.innerHTML = `
-                    <input type="checkbox" value="" ${this.filters.teams.length === 0 ? 'checked' : ''}>
-                    <span>All Teams</span>
+                    <input type="checkbox" id="all-teams" value="" ${this.filters.teams.length === 0 ? 'checked' : ''}>
+                    <label for="all-teams">All Teams</label>
                 `;
                 teamDropdown.appendChild(allTeamsOption);
 
                 // Add individual team options
-                teams.forEach(team => {
+                teams.forEach((team, index) => {
                     const isChecked = this.filters.teams.includes(team);
                     const teamOption = document.createElement('div');
                     teamOption.className = `team-option ${isChecked ? 'selected' : ''}`;
+                    const checkboxId = `team-${index}`;
                     teamOption.innerHTML = `
-                        <input type="checkbox" value="${team}" ${isChecked ? 'checked' : ''}>
-                        <span>${team}</span>
+                        <input type="checkbox" id="${checkboxId}" value="${team}" ${isChecked ? 'checked' : ''}>
+                        <label for="${checkboxId}">${team}</label>
                     `;
                     teamDropdown.appendChild(teamOption);
                 });
 
                 // Add event listeners to all checkboxes
                 teamDropdown.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-                    checkbox.addEventListener('change', () => {
+                    checkbox.addEventListener('change', (e) => {
+                        e.stopPropagation();
                         this.handleTeamSelection();
                     });
                 });
@@ -704,20 +753,21 @@
                 const allTeamsCheckbox = teamDropdown.querySelector('input[value=""]');
                 const teamCheckboxes = teamDropdown.querySelectorAll('input[value]:not([value=""])');
 
+                // Clear previous selection state
+                this.filters.teams = [];
+
                 if (allTeamsCheckbox && allTeamsCheckbox.checked) {
                     // If "All Teams" is checked, uncheck others and clear selection
                     teamCheckboxes.forEach(cb => {
                         cb.checked = false;
                         cb.closest('.team-option').classList.remove('selected');
                     });
-                    this.filters.teams = [];
                     console.log('All teams selected - clearing team filters');
                 } else {
-                    // If any team is checked, uncheck "All Teams"
+                    // If any individual team is checked, uncheck "All Teams"
                     if (allTeamsCheckbox) allTeamsCheckbox.checked = false;
                     
                     // Update selected teams and visual state
-                    this.filters.teams = [];
                     teamCheckboxes.forEach(cb => {
                         if (cb.checked) {
                             this.filters.teams.push(cb.value);
@@ -726,6 +776,11 @@
                             cb.closest('.team-option').classList.remove('selected');
                         }
                     });
+                    
+                    // If no teams are selected, default to all teams
+                    if (this.filters.teams.length === 0) {
+                        if (allTeamsCheckbox) allTeamsCheckbox.checked = true;
+                    }
                     
                     console.log('Teams selected:', this.filters.teams);
                 }
@@ -738,26 +793,23 @@
             }
 
             updateTeamFilterDisplay() {
-                const teamFilter = document.getElementById('teamFilter');
-                if (!teamFilter) return;
+                const teamFilterButton = document.getElementById('teamFilterButton');
+                if (!teamFilterButton) return;
 
-                // Clear current display
-                teamFilter.innerHTML = '';
-                
-                const option = document.createElement('option');
+                let displayText;
                 
                 if (this.filters.teams.length === 0) {
-                    option.textContent = 'All Teams (Click to expand)';
+                    displayText = 'All Teams (Click to expand)';
                 } else if (this.filters.teams.length === 1) {
-                    option.textContent = `${this.filters.teams[0]} (Click to change)`;
+                    displayText = `${this.filters.teams[0]} (Click to change)`;
                 } else if (this.filters.teams.length <= 3) {
-                    option.textContent = `${this.filters.teams.join(', ')} (Click to change)`;
+                    displayText = `${this.filters.teams.join(', ')} (Click to change)`;
                 } else {
-                    option.textContent = `${this.filters.teams.length} teams selected (Click to change)`;
+                    displayText = `${this.filters.teams.length} teams selected (Click to change)`;
                 }
                 
-                teamFilter.appendChild(option);
-                console.log('Team filter display updated:', option.textContent);
+                teamFilterButton.textContent = displayText;
+                console.log('Team filter display updated:', displayText);
             }
 
             clearAllFilters() {

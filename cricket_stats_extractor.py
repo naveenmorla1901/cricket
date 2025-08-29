@@ -12,8 +12,13 @@ import time
 # Club Configuration
 clubId = [
     {"id": 1096797, "name": "Kakatiya CC", "type": "T7"},
-    {"id": 1100194, "name": "Warriors CC", "type": "T15"},
-    {"id": 2317, "name": "Strikers CC", "type": "T20"},     # Add more like this
+    {"id": 1100194, "name": "Easton Cricket League", "type": "T7"},
+    {"id": 2317, "name": "Dublin cricket League", "type": "T15"},
+    {"id": 23340, "name":"SVATSCup", "type": "T15"},
+    {"id": 21754, "name": "PDCC", "type": "T15"},
+    {"id": 1000903, "name": "ColumbusCricketClubT15", "type": "T15"},
+    {"id": 24116, "name": "TACO Cricket", "type": "T7"},
+              # Add more like this
 ]
 
 def get_cricket_stats_json(stat_type="batting", year=2025, output_dir="data"):
