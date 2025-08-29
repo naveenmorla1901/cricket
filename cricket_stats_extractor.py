@@ -130,7 +130,7 @@ def extract_club_stats(stat_type, club_id, year):
 
     url = url_patterns[stat_type]
 
-    # Chrome options for GitHub Actions
+    # Chrome options for GitHub Actions (with warnings suppressed)
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
@@ -138,6 +138,16 @@ def extract_club_stats(stat_type, club_id, year):
     options.add_argument('--disable-gpu')
     options.add_argument('--disable-web-security')
     options.add_argument('--allow-running-insecure-content')
+    options.add_argument('--disable-logging')
+    options.add_argument('--disable-extensions')
+    options.add_argument('--disable-plugins')
+    options.add_argument('--disable-background-timer-throttling')
+    options.add_argument('--disable-renderer-backgrounding')
+    options.add_argument('--disable-backgrounding-occluded-windows')
+    options.add_argument('--disable-ipc-flooding-protection')
+    options.add_argument('--log-level=3')  # Suppress INFO, WARNING, ERROR
+    options.add_experimental_option('excludeSwitches', ['enable-logging'])
+    options.add_experimental_option('useAutomationExtension', False)
     options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
 
     driver = None
