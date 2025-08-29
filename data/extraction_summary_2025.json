@@ -1,0 +1,64 @@
+{
+  "extractionTime": "2025-08-29T14:07:33.156532",
+  "year": 2025,
+  "totalClubs": 3,
+  "clubsConfigured": [
+    {
+      "id": 1096797,
+      "name": "Kakatiya CC",
+      "type": "T7"
+    },
+    {
+      "id": 1100194,
+      "name": "Warriors CC",
+      "type": "T15"
+    },
+    {
+      "id": 2317,
+      "name": "Strikers CC",
+      "type": "T20"
+    }
+  ],
+  "results": {
+    "batting": {
+      "success": true,
+      "totalRecords": 600,
+      "successfulClubs": [
+        "Kakatiya CC",
+        "Warriors CC",
+        "Strikers CC"
+      ],
+      "failedClubs": []
+    },
+    "bowling": {
+      "success": true,
+      "totalRecords": 566,
+      "successfulClubs": [
+        "Kakatiya CC",
+        "Warriors CC",
+        "Strikers CC"
+      ],
+      "failedClubs": []
+    },
+    "fielding": {
+      "success": true,
+      "totalRecords": 600,
+      "successfulClubs": [
+        "Kakatiya CC",
+        "Warriors CC",
+        "Strikers CC"
+      ],
+      "failedClubs": []
+    },
+    "ranking": {
+      "success": true,
+      "totalRecords": 0,
+      "successfulClubs": [],
+      "failedClubs": [
+        "Kakatiya CC (No data)",
+        "Warriors CC (No data)",
+        "Strikers CC (No data)"
+      ]
+    }
+  }
+}

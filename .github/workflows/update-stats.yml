@@ -1,0 +1,121 @@
+name: Update Cricket Statistics
+
+on:
+  # Schedule for weekdays: 3 PM to 9 PM every hour
+  # Schedule for weekends: 6 AM to 12 AM (midnight) every hour
+  schedule:
+    # Weekdays (Mon-Fri): 15:00, 16:00, 17:00, 18:00, 19:00, 20:00, 21:00 UTC
+    - cron: '0 15-21 * * 1-5'
+    # Weekends (Sat-Sun): 06:00, 07:00, ..., 23:00 UTC  
+    - cron: '0 6-23 * * 0,6'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      year:
+        description: 'Year to extract data for'
+        required: false
+        default: '2025'
+        type: string
+
+jobs:
+  update-stats:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install Chrome
+      uses: browser-actions/setup-chrome@v1
+      with:
+        chrome-version: stable
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pandas selenium beautifulsoup4 lxml
+
+    - name: Install ChromeDriver
+      run: |
+        # Get Chrome version
+        CHROME_VERSION=$(google-chrome --version | cut -d " " -f3 | cut -d "." -f1)
+        echo "Chrome version: $CHROME_VERSION"
+        
+        # Download matching ChromeDriver
+        CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION")
+        echo "ChromeDriver version: $CHROMEDRIVER_VERSION"
+        
+        wget -O /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip"
+        sudo unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/
+        sudo chmod +x /usr/local/bin/chromedriver
+        chromedriver --version
+
+    - name: Create data directory
+      run: mkdir -p data
+
+    - name: Extract cricket statistics
+      run: |
+        YEAR="${{ github.event.inputs.year || '2025' }}"
+        echo "Extracting data for year: $YEAR"
+        python cricket_stats_extractor.py $YEAR data
+      continue-on-error: true
+
+    - name: Check if data files exist
+      run: |
+        echo "Checking generated files:"
+        ls -la data/ || echo "No data directory found"
+        
+        # Count JSON files
+        JSON_COUNT=$(find data -name "*.json" -type f | wc -l)
+        echo "JSON files found: $JSON_COUNT"
+        
+        if [ $JSON_COUNT -gt 0 ]; then
+          echo "Data extraction successful"
+          echo "FILES_GENERATED=true" >> $GITHUB_ENV
+        else
+          echo "No data files generated"
+          echo "FILES_GENERATED=false" >> $GITHUB_ENV
+        fi
+
+    - name: Commit and push changes
+      if: env.FILES_GENERATED == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Add all data files
+        git add data/*.json
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Update cricket statistics - $(date '+%Y-%m-%d %H:%M:%S UTC')"
+          git push
+        fi
+
+    - name: Create failure notification
+      if: env.FILES_GENERATED == 'false'
+      run: |
+        echo "Cricket statistics update failed at $(date)" >> data/last_failure.log
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add data/last_failure.log
+        git commit -m "Log extraction failure - $(date '+%Y-%m-%d %H:%M:%S UTC')" || echo "No changes to commit"
+        git push || echo "Push failed"
+
+    - name: Upload logs as artifact
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: extraction-logs
+        path: |
+          data/
+          *.log
+        retention-days: 7

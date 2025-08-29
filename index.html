@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cricket Club Statistics</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .last-updated {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .filters {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.9em;
+        }
+
+        select, input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            min-width: 150px;
+            transition: border-color 0.3s;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .tabs {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .tab-headers {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .tab-header {
+            flex: 1;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #6c757d;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-header.active {
+            background: white;
+            color: #495057;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-header:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .tab-content {
+            padding: 20px;
+            background: white;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        .stats-summary {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 13px;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+            font-size: 1.1em;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filter-group {
+                width: 100%;
+            }
+            
+            select, input {
+                min-width: 100%;
+            }
+
+            .tab-headers {
+                flex-direction: column;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .stats-summary {
+                justify-content: center;
+            }
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏏 Cricket Club Statistics</h1>
+            <p>Comprehensive cricket performance analytics</p>
+            <div class="last-updated" id="lastUpdated">Loading...</div>
+        </div>
+
+        <div class="filters">
+            <div class="filter-group">
+                <label for="teamFilter">Team Filter</label>
+                <select id="teamFilter" multiple size="1">
+                    <option value="">All Teams</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="matchTypeFilter">Match Type</label>
+                <select id="matchTypeFilter">
+                    <option value="">All Match Types</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="yearFilter">Year</label>
+                <select id="yearFilter">
+                    <option value="2025">2025</option>
+                    <option value="2024">2024</option>
+                    <option value="2023">2023</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab-headers">
+                <button class="tab-header active" data-tab="batting">🏏 Batting</button>
+                <button class="tab-header" data-tab="bowling">⚡ Bowling</button>
+                <button class="tab-header" data-tab="fielding">🥅 Fielding</button>
+                <button class="tab-header" data-tab="ranking">🏆 Rankings</button>
+            </div>
+
+            <div class="tab-content">
+                <div id="batting" class="tab-pane active">
+                    <div id="batting-summary" class="stats-summary"></div>
+                    <div class="table-container">
+                        <table id="batting-table">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="bowling" class="tab-pane">
+                    <div id="bowling-summary" class="stats-summary"></div>
+                    <div class="table-container">
+                        <table id="bowling-table">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="fielding" class="tab-pane">
+                    <div id="fielding-summary" class="stats-summary"></div>
+                    <div class="table-container">
+                        <table id="fielding-table">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="ranking" class="tab-pane">
+                    <div id="ranking-summary" class="stats-summary"></div>
+                    <div class="table-container">
+                        <table id="ranking-table">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class CricketStatsApp {
+            constructor() {
+                this.data = {};
+                this.filteredData = {};
+                this.currentTab = 'batting';
+                this.filters = {
+                    team: '',
+                    matchType: '',
+                    year: '2025'
+                };
+                
+                this.init();
+            }
+
+            async init() {
+                this.setupEventListeners();
+                await this.loadData();
+                this.setupFilters();
+                this.renderCurrentTab();
+            }
+
+            setupEventListeners() {
+                // Tab switching
+                document.querySelectorAll('.tab-header').forEach(header => {
+                    header.addEventListener('click', (e) => {
+                        this.switchTab(e.target.dataset.tab);
+                    });
+                });
+
+                // Filter changes
+                document.getElementById('teamFilter').addEventListener('change', (e) => {
+                    this.filters.team = e.target.value;
+                    this.applyFilters();
+                });
+
+                document.getElementById('matchTypeFilter').addEventListener('change', (e) => {
+                    this.filters.matchType = e.target.value;
+                    this.applyFilters();
+                });
+
+                document.getElementById('yearFilter').addEventListener('change', (e) => {
+                    this.filters.year = e.target.value;
+                    this.loadData();
+                });
+            }
+
+            async loadData() {
+                try {
+                    this.showLoading();
+                    
+                    const year = this.filters.year;
+                    const responses = await Promise.all([
+                        fetch(`./data/batting_${year}.json`),
+                        fetch(`./data/bowling_${year}.json`),
+                        fetch(`./data/fielding_${year}.json`),
+                        fetch(`./data/ranking_${year}.json`)
+                    ]);
+
+                    const [batting, bowling, fielding, ranking] = await Promise.all(
+                        responses.map(async (response, index) => {
+                            if (response.ok) {
+                                return await response.json();
+                            } else {
+                                console.warn(`Failed to load ${['batting', 'bowling', 'fielding', 'ranking'][index]} data`);
+                                return { data: [], lastUpdated: null };
+                            }
+                        })
+                    );
+
+                    this.data = { batting, bowling, fielding, ranking };
+                    this.applyFilters();
+                    this.updateLastUpdated();
+
+                } catch (error) {
+                    this.showError('Failed to load cricket statistics. Please try again later.');
+                    console.error('Error loading data:', error);
+                }
+            }
+
+            showLoading() {
+                document.querySelectorAll('.tab-pane').forEach(pane => {
+                    pane.innerHTML = '<div class="loading">Loading statistics...</div>';
+                });
+            }
+
+            showError(message) {
+                document.querySelectorAll('.tab-pane').forEach(pane => {
+                    pane.innerHTML = `<div class="error">${message}</div>`;
+                });
+            }
+
+            updateLastUpdated() {
+                const lastUpdated = Object.values(this.data)
+                    .map(d => d.lastUpdated)
+                    .filter(d => d)
+                    .sort()
+                    .pop();
+
+                if (lastUpdated) {
+                    document.getElementById('lastUpdated').textContent = 
+                        `Last updated: ${new Date(lastUpdated).toLocaleString()}`;
+                } else {
+                    document.getElementById('lastUpdated').textContent = '';
+                }
+            }
+
+            setupFilters() {
+                const allTeams = new Set();
+                const allMatchTypes = new Set();
+
+                Object.values(this.data).forEach(dataset => {
+                    if (dataset.data) {
+                        dataset.data.forEach(row => {
+                            if (row.Team) allTeams.add(row.Team);
+                            if (row.team) allTeams.add(row.team);
+                            if (row.Match_Type) allMatchTypes.add(row.Match_Type);
+                        });
+                    }
+                });
+
+                this.populateFilter('teamFilter', Array.from(allTeams).sort());
+                this.populateFilter('matchTypeFilter', Array.from(allMatchTypes).sort());
+            }
+
+            populateFilter(filterId, options) {
+                const filter = document.getElementById(filterId);
+                const currentValue = filter.value;
+                
+                // Keep the "All" option
+                const firstOption = filter.firstElementChild;
+                filter.innerHTML = '';
+                filter.appendChild(firstOption);
+
+                options.forEach(option => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = option;
+                    optionElement.textContent = option;
+                    filter.appendChild(optionElement);
+                });
+
+                filter.value = currentValue;
+            }
+
+            applyFilters() {
+                this.filteredData = {};
+                
+                Object.keys(this.data).forEach(statType => {
+                    if (!this.data[statType].data) {
+                        this.filteredData[statType] = [];
+                        return;
+                    }
+
+                    this.filteredData[statType] = this.data[statType].data.filter(row => {
+                        const team = row.Team || row.team || '';
+                        const matchType = row.Match_Type || '';
+
+                        const teamMatch = !this.filters.team || team === this.filters.team;
+                        const matchTypeMatch = !this.filters.matchType || matchType === this.filters.matchType;
+
+                        return teamMatch && matchTypeMatch;
+                    });
+                });
+
+                this.renderCurrentTab();
+            }
+
+            switchTab(tabName) {
+                // Update active tab header
+                document.querySelectorAll('.tab-header').forEach(header => {
+                    header.classList.remove('active');
+                });
+                document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+                // Update active tab pane
+                document.querySelectorAll('.tab-pane').forEach(pane => {
+                    pane.classList.remove('active');
+                });
+                document.getElementById(tabName).classList.add('active');
+
+                this.currentTab = tabName;
+                this.renderCurrentTab();
+            }
+
+            renderCurrentTab() {
+                const data = this.filteredData[this.currentTab] || [];
+                this.renderSummary(this.currentTab, data);
+                this.renderTable(this.currentTab, data);
+            }
+
+            renderSummary(statType, data) {
+                const summaryElement = document.getElementById(`${statType}-summary`);
+                let summaryHTML = '';
+
+                if (data.length === 0) {
+                    summaryHTML = '<div class="no-data">No data available for the selected filters</div>';
+                } else {
+                    const totalPlayers = data.length;
+                    const uniqueTeams = new Set(data.map(row => row.Team || row.team)).size;
+
+                    summaryHTML = `
+                        <div class="stat-item">
+                            <div class="stat-value">${totalPlayers}</div>
+                            <div class="stat-label">Total Players</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${uniqueTeams}</div>
+                            <div class="stat-label">Teams</div>
+                        </div>
+                    `;
+
+                    // Add stat-specific summaries
+                    if (statType === 'batting' && data.some(row => row.Runs)) {
+                        const totalRuns = data.reduce((sum, row) => sum + (parseInt(row.Runs) || 0), 0);
+                        summaryHTML += `
+                            <div class="stat-item">
+                                <div class="stat-value">${totalRuns.toLocaleString()}</div>
+                                <div class="stat-label">Total Runs</div>
+                            </div>
+                        `;
+                    } else if (statType === 'bowling' && data.some(row => row.Wkts)) {
+                        const totalWickets = data.reduce((sum, row) => sum + (parseInt(row.Wkts) || 0), 0);
+                        summaryHTML += `
+                            <div class="stat-item">
+                                <div class="stat-value">${totalWickets}</div>
+                                <div class="stat-label">Total Wickets</div>
+                            </div>
+                        `;
+                    } else if (statType === 'fielding' && data.some(row => row.Catches)) {
+                        const totalCatches = data.reduce((sum, row) => sum + (parseInt(row.Catches) || 0), 0);
+                        summaryHTML += `
+                            <div class="stat-item">
+                                <div class="stat-value">${totalCatches}</div>
+                                <div class="stat-label">Total Catches</div>
+                            </div>
+                        `;
+                    }
+                }
+
+                summaryElement.innerHTML = summaryHTML;
+            }
+
+            renderTable(statType, data) {
+                const table = document.getElementById(`${statType}-table`);
+                const thead = table.querySelector('thead');
+                const tbody = table.querySelector('tbody');
+
+                if (data.length === 0) {
+                    thead.innerHTML = '';
+                    tbody.innerHTML = '<tr><td colspan="100%" class="no-data">No data available for the selected filters</td></tr>';
+                    return;
+                }
+
+                // Get columns (exclude hidden ones)
+                const hiddenColumns = ['Club_ID', 'Club_Name', 'Group', 'Player_ID'];
+                const allColumns = Object.keys(data[0]);
+                const visibleColumns = allColumns.filter(col => !hiddenColumns.includes(col));
+
+                // Render header
+                thead.innerHTML = `
+                    <tr>
+                        ${visibleColumns.map(col => `<th>${col}</th>`).join('')}
+                    </tr>
+                `;
+
+                // Render body
+                tbody.innerHTML = data.map(row => `
+                    <tr>
+                        ${visibleColumns.map(col => `<td>${row[col] || ''}</td>`).join('')}
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // Initialize the app when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new CricketStatsApp();
+        });
+    </script>
+</body>
+</html>
