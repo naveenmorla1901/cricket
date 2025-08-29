@@ -284,7 +284,9 @@
 
             <div class="tab-content">
                 <div id="batting" class="tab-pane active">
-                    <div id="batting-summary" class="stats-summary"></div>
+                    <div id="batting-summary" class="stats-summary">
+                        <div class="loading">Loading batting statistics...</div>
+                    </div>
                     <div class="table-container">
                         <table id="batting-table">
                             <thead></thead>
@@ -294,7 +296,9 @@
                 </div>
 
                 <div id="bowling" class="tab-pane">
-                    <div id="bowling-summary" class="stats-summary"></div>
+                    <div id="bowling-summary" class="stats-summary">
+                        <div class="loading">Loading bowling statistics...</div>
+                    </div>
                     <div class="table-container">
                         <table id="bowling-table">
                             <thead></thead>
@@ -304,7 +308,9 @@
                 </div>
 
                 <div id="fielding" class="tab-pane">
-                    <div id="fielding-summary" class="stats-summary"></div>
+                    <div id="fielding-summary" class="stats-summary">
+                        <div class="loading">Loading fielding statistics...</div>
+                    </div>
                     <div class="table-container">
                         <table id="fielding-table">
                             <thead></thead>
@@ -314,7 +320,9 @@
                 </div>
 
                 <div id="ranking" class="tab-pane">
-                    <div id="ranking-summary" class="stats-summary"></div>
+                    <div id="ranking-summary" class="stats-summary">
+                        <div class="loading">Loading ranking statistics...</div>
+                    </div>
                     <div class="table-container">
                         <table id="ranking-table">
                             <thead></thead>
@@ -378,31 +386,44 @@
                     this.showLoading();
                     
                     const year = this.filters.year;
+                    console.log(`Loading data for year: ${year}`);
+                    
                     const responses = await Promise.all([
-                        fetch(`./data/batting_${year}.json`),
-                        fetch(`./data/bowling_${year}.json`),
-                        fetch(`./data/fielding_${year}.json`),
-                        fetch(`./data/ranking_${year}.json`)
+                        fetch(`./data/batting_${year}.json`).catch(e => ({ ok: false, error: e })),
+                        fetch(`./data/bowling_${year}.json`).catch(e => ({ ok: false, error: e })),
+                        fetch(`./data/fielding_${year}.json`).catch(e => ({ ok: false, error: e })),
+                        fetch(`./data/ranking_${year}.json`).catch(e => ({ ok: false, error: e }))
                     ]);
 
                     const [batting, bowling, fielding, ranking] = await Promise.all(
                         responses.map(async (response, index) => {
+                            const statTypes = ['batting', 'bowling', 'fielding', 'ranking'];
                             if (response.ok) {
-                                return await response.json();
+                                try {
+                                    const data = await response.json();
+                                    console.log(`Loaded ${statTypes[index]}:`, data);
+                                    return data;
+                                } catch (jsonError) {
+                                    console.warn(`JSON parse error for ${statTypes[index]}:`, jsonError);
+                                    return { data: [], lastUpdated: null };
+                                }
                             } else {
-                                console.warn(`Failed to load ${['batting', 'bowling', 'fielding', 'ranking'][index]} data`);
+                                console.warn(`Failed to load ${statTypes[index]} data:`, response.error || 'HTTP error');
                                 return { data: [], lastUpdated: null };
                             }
                         })
                     );
 
                     this.data = { batting, bowling, fielding, ranking };
+                    console.log('All data loaded:', this.data);
+                    
                     this.applyFilters();
+                    this.setupFilters();
                     this.updateLastUpdated();
 
                 } catch (error) {
-                    this.showError('Failed to load cricket statistics. Please try again later.');
                     console.error('Error loading data:', error);
+                    this.showError('Failed to load cricket statistics. Please check that data files exist in the data/ folder.');
                 }
             }
 
@@ -518,6 +539,12 @@
 
             renderSummary(statType, data) {
                 const summaryElement = document.getElementById(`${statType}-summary`);
+                
+                if (!summaryElement) {
+                    console.error(`Summary element not found for: ${statType}-summary`);
+                    return;
+                }
+                
                 let summaryHTML = '';
 
                 if (data.length === 0) {
