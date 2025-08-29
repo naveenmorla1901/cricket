@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cricket Club Statistics</title>
+    <title>Cara Cricket Stats</title>
     <style>
         * {
             margin: 0;
@@ -19,9 +19,9 @@
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 95%;
             margin: 0 auto;
-            padding: 20px;
+            padding: 15px;
         }
 
         .header {
@@ -36,12 +36,16 @@
         .header h1 {
             color: #2c3e50;
             margin-bottom: 10px;
-            font-size: 2.5em;
+            font-size: 2.8em;
+        }
+
+        .header p {
+            font-size: 1.1em;
         }
 
         .last-updated {
             color: #7f8c8d;
-            font-size: 0.9em;
+            font-size: 1em;
             margin-top: 10px;
         }
 
@@ -54,7 +58,7 @@
             display: flex;
             gap: 20px;
             flex-wrap: wrap;
-            align-items: center;
+            align-items: flex-end;
         }
 
         .filter-group {
@@ -66,21 +70,77 @@
         .filter-group label {
             font-weight: 600;
             color: #2c3e50;
-            font-size: 0.9em;
+            font-size: 1em;
         }
 
-        select, input {
-            padding: 8px 12px;
+        select, input, button {
+            padding: 10px 15px;
             border: 2px solid #ddd;
             border-radius: 8px;
-            font-size: 14px;
-            min-width: 150px;
+            font-size: 15px;
+            min-width: 160px;
             transition: border-color 0.3s;
         }
 
         select:focus, input:focus {
             outline: none;
             border-color: #667eea;
+        }
+
+        button {
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .team-dropdown-container {
+            position: relative;
+            min-width: 250px;
+        }
+
+        .team-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            display: none;
+        }
+
+        .team-option {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .team-option:hover {
+            background-color: #f0f0f0;
+        }
+
+        .team-option.selected {
+            background-color: #e3f2fd;
+            font-weight: 500;
+        }
+
+        .team-option input {
+            margin-right: 8px;
+            min-width: auto;
+            width: auto;
         }
 
         .tabs {
@@ -98,11 +158,11 @@
 
         .tab-header {
             flex: 1;
-            padding: 15px 20px;
+            padding: 18px 25px;
             background: #f8f9fa;
             border: none;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 17px;
             font-weight: 600;
             color: #6c757d;
             transition: all 0.3s ease;
@@ -151,13 +211,13 @@
         }
 
         .stat-value {
-            font-size: 1.5em;
+            font-size: 1.8em;
             font-weight: bold;
             color: #667eea;
         }
 
         .stat-label {
-            font-size: 0.9em;
+            font-size: 1em;
             color: #6c757d;
         }
 
@@ -174,10 +234,10 @@
         }
 
         th, td {
-            padding: 12px 8px;
+            padding: 15px 12px;
             text-align: left;
             border-bottom: 1px solid #dee2e6;
-            font-size: 13px;
+            font-size: 15px;
         }
 
         th {
@@ -187,6 +247,32 @@
             position: sticky;
             top: 0;
             z-index: 10;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.3s;
+            font-size: 16px;
+        }
+
+        th:hover {
+            background: #5a6fd8;
+        }
+
+        th.sortable::after {
+            content: ' ⇅';
+            opacity: 0.5;
+            font-size: 0.8em;
+        }
+
+        th.sort-asc::after {
+            content: ' ↑';
+            opacity: 1;
+            color: #ffd700;
+        }
+
+        th.sort-desc::after {
+            content: ' ↓';
+            opacity: 1;
+            color: #ffd700;
         }
 
         tbody tr:hover {
@@ -208,18 +294,37 @@
             margin: 20px 0;
         }
 
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .search-highlight {
+            background-color: #ffeb3b !important;
+            font-weight: bold;
+        }
+
         @media (max-width: 768px) {
+            .container {
+                max-width: 98%;
+                padding: 10px;
+            }
+            
             .filters {
                 flex-direction: column;
                 align-items: stretch;
+                gap: 15px;
             }
             
             .filter-group {
                 width: 100%;
             }
             
-            select, input {
+            select, input, button {
                 min-width: 100%;
+                font-size: 16px; /* Prevent zoom on iOS */
             }
 
             .tab-headers {
@@ -227,53 +332,68 @@
             }
 
             .header h1 {
-                font-size: 2em;
+                font-size: 2.2em;
             }
 
             .stats-summary {
                 justify-content: center;
+                gap: 20px;
             }
-        }
 
-        .no-data {
-            text-align: center;
-            padding: 40px;
-            color: #6c757d;
-            font-style: italic;
+            th, td {
+                padding: 12px 8px;
+                font-size: 14px;
+            }
+
+            th {
+                font-size: 15px;
+            }
+
+            .team-dropdown-container {
+                min-width: 100%;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🏏 Cricket Club Statistics</h1>
+            <h1>🏏 Cara Cricket Stats</h1>
             <p>Comprehensive cricket performance analytics</p>
             <div class="last-updated" id="lastUpdated">Loading...</div>
         </div>
 
         <div class="filters">
             <div class="filter-group">
-                <label for="teamFilter">Team Filter</label>
-                <select id="teamFilter">
-                    <option value="">All Teams</option>
-                </select>
+                <label for="playerSearch">🔍 Search Player</label>
+                <input type="text" id="playerSearch" placeholder="Type player name...">
             </div>
+            
+            <div class="filter-group">
+                <label for="teamFilter">Teams</label>
+                <div class="team-dropdown-container">
+                    <select id="teamFilter">
+                        <option value="">All Teams (Click to expand)</option>
+                    </select>
+                    <div id="teamDropdown" class="team-dropdown">
+                        <!-- Team checkboxes will be populated here -->
+                    </div>
+                </div>
+            </div>
+            
             <div class="filter-group">
                 <label for="matchTypeFilter">Match Type</label>
                 <select id="matchTypeFilter">
                     <option value="">All Match Types</option>
                 </select>
             </div>
+            
             <div class="filter-group">
-                <label for="yearFilter">Year</label>
-                <select id="yearFilter">
-                    <option value="2025" selected>2025</option>
-                    <option value="2024">2024</option>
-                    <option value="2023">2023</option>
-                </select>
+                <button id="refreshBtn" style="background: #667eea; color: white; border-color: #667eea;">🔄 Refresh</button>
             </div>
+            
             <div class="filter-group">
-                <button id="refreshBtn" style="padding: 8px 15px; border: 2px solid #667eea; background: #667eea; color: white; border-radius: 8px; cursor: pointer;">🔄 Refresh</button>
+                <button id="clearFilters" style="background: #e74c3c; color: white; border-color: #e74c3c;">🗑️ Clear</button>
             </div>
         </div>
 
@@ -340,41 +460,23 @@
     <script>
         class CricketStatsApp {
             constructor() {
-                console.log('🚀 Starting CricketStatsApp...');
+                console.log('🚀 Starting Cara Cricket Stats...');
                 this.data = {};
                 this.filteredData = {};
                 this.currentTab = 'batting';
+                this.sortState = { column: null, direction: 'asc' };
                 this.filters = {
-                    team: '',
+                    teams: [],
                     matchType: '',
-                    year: '2025'
+                    playerSearch: ''
                 };
             }
 
             async init() {
                 console.log('📋 Initializing app...');
-                
-                // Check if elements exist
-                this.checkElements();
-                
-                // Setup event listeners
                 this.setupEventListeners();
-                
-                // Load data
                 await this.loadData();
-                
-                // Render current tab
                 this.renderCurrentTab();
-            }
-
-            checkElements() {
-                const elements = ['batting-summary', 'batting-table', 'bowling-summary', 'bowling-table', 
-                                'fielding-summary', 'fielding-table', 'ranking-summary', 'ranking-table'];
-                
-                elements.forEach(id => {
-                    const element = document.getElementById(id);
-                    console.log(`${element ? '✅' : '❌'} ${id}`);
-                });
             }
 
             setupEventListeners() {
@@ -387,19 +489,14 @@
                     });
                 });
 
-                // Filter events
-                const teamFilter = document.getElementById('teamFilter');
-                const matchTypeFilter = document.getElementById('matchTypeFilter');
-                const yearFilter = document.getElementById('yearFilter');
-                const refreshBtn = document.getElementById('refreshBtn');
+                // Team filter setup
+                this.setupTeamFilter();
 
-                if (teamFilter) {
-                    teamFilter.addEventListener('change', (e) => {
-                        this.filters.team = e.target.value;
-                        console.log('Team filter changed:', this.filters.team || 'All Teams');
-                        this.applyFilters();
-                    });
-                }
+                // Other filters
+                const matchTypeFilter = document.getElementById('matchTypeFilter');
+                const playerSearch = document.getElementById('playerSearch');
+                const refreshBtn = document.getElementById('refreshBtn');
+                const clearFilters = document.getElementById('clearFilters');
 
                 if (matchTypeFilter) {
                     matchTypeFilter.addEventListener('change', (e) => {
@@ -409,11 +506,15 @@
                     });
                 }
 
-                if (yearFilter) {
-                    yearFilter.addEventListener('change', (e) => {
-                        this.filters.year = e.target.value;
-                        console.log('Year changed:', this.filters.year);
-                        this.loadData();
+                if (playerSearch) {
+                    let searchTimeout;
+                    playerSearch.addEventListener('input', (e) => {
+                        clearTimeout(searchTimeout);
+                        searchTimeout = setTimeout(() => {
+                            this.filters.playerSearch = e.target.value.toLowerCase().trim();
+                            console.log('Player search:', this.filters.playerSearch || 'No search');
+                            this.applyFilters();
+                        }, 300);
                     });
                 }
 
@@ -423,14 +524,42 @@
                         this.loadData();
                     });
                 }
+
+                if (clearFilters) {
+                    clearFilters.addEventListener('click', () => {
+                        console.log('Clearing all filters');
+                        this.clearAllFilters();
+                    });
+                }
+            }
+
+            setupTeamFilter() {
+                const teamFilter = document.getElementById('teamFilter');
+                const teamDropdown = document.getElementById('teamDropdown');
+                
+                if (!teamFilter || !teamDropdown) return;
+
+                // Toggle dropdown
+                teamFilter.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const isVisible = teamDropdown.style.display === 'block';
+                    teamDropdown.style.display = isVisible ? 'none' : 'block';
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.team-dropdown-container')) {
+                        teamDropdown.style.display = 'none';
+                    }
+                });
             }
 
             async loadData() {
                 try {
-                    console.log('📥 Loading data for year:', this.filters.year);
+                    console.log('📥 Loading cricket statistics...');
                     this.showLoading();
                     
-                    const year = this.filters.year;
+                    const year = 2025;
                     const responses = await Promise.all([
                         fetch(`./data/batting_${year}.json`).catch(e => ({ ok: false, error: e })),
                         fetch(`./data/bowling_${year}.json`).catch(e => ({ ok: false, error: e })),
@@ -466,34 +595,22 @@
 
                 } catch (error) {
                     console.error('Error loading data:', error);
-                    this.showError('Failed to load cricket statistics. Please check that data files exist.');
+                    this.showError('Failed to load cricket statistics.');
                 }
             }
 
             showLoading() {
-                console.log('Showing loading state...');
                 const tabs = ['batting', 'bowling', 'fielding', 'ranking'];
-                
                 tabs.forEach(tab => {
                     const summaryEl = document.getElementById(`${tab}-summary`);
                     if (summaryEl) {
                         summaryEl.innerHTML = '<div class="loading">Loading statistics...</div>';
                     }
-                    
-                    const table = document.getElementById(`${tab}-table`);
-                    if (table) {
-                        const tbody = table.querySelector('tbody');
-                        if (tbody) {
-                            tbody.innerHTML = '<tr><td colspan="100%" class="loading">Loading data...</td></tr>';
-                        }
-                    }
                 });
             }
 
             showError(message) {
-                console.log('Showing error:', message);
                 const tabs = ['batting', 'bowling', 'fielding', 'ranking'];
-                
                 tabs.forEach(tab => {
                     const summaryEl = document.getElementById(`${tab}-summary`);
                     if (summaryEl) {
@@ -520,40 +637,177 @@
                     }
                 });
 
-                this.populateFilter('teamFilter', Array.from(allTeams).sort());
-                this.populateFilter('matchTypeFilter', Array.from(allMatchTypes).sort());
+                this.populateTeamDropdown(Array.from(allTeams).sort());
+                this.populateMatchTypeFilter(Array.from(allMatchTypes).sort());
                 
                 console.log(`✅ Filter options setup - Teams: ${allTeams.size}, Match Types: ${allMatchTypes.size}`);
             }
 
-            populateFilter(filterId, options) {
-                const filter = document.getElementById(filterId);
-                if (!filter) {
-                    console.warn(`Filter element not found: ${filterId}`);
-                    return;
-                }
-                
-                const currentValue = filter.value;
-                
-                // Keep the "All" option
-                const firstOption = filter.firstElementChild;
-                filter.innerHTML = '';
-                filter.appendChild(firstOption);
+            populateTeamDropdown(teams) {
+                const teamDropdown = document.getElementById('teamDropdown');
+                if (!teamDropdown) return;
 
-                options.forEach(option => {
-                    const optionElement = document.createElement('option');
-                    optionElement.value = option;
-                    optionElement.textContent = option;
-                    filter.appendChild(optionElement);
+                // Clear and rebuild dropdown
+                teamDropdown.innerHTML = '';
+
+                // Add "All Teams" option
+                const allTeamsOption = document.createElement('div');
+                allTeamsOption.className = 'team-option';
+                allTeamsOption.innerHTML = `
+                    <input type="checkbox" value="" ${this.filters.teams.length === 0 ? 'checked' : ''}>
+                    <span>All Teams</span>
+                `;
+                teamDropdown.appendChild(allTeamsOption);
+
+                // Add individual team options
+                teams.forEach(team => {
+                    const isChecked = this.filters.teams.includes(team);
+                    const teamOption = document.createElement('div');
+                    teamOption.className = `team-option ${isChecked ? 'selected' : ''}`;
+                    teamOption.innerHTML = `
+                        <input type="checkbox" value="${team}" ${isChecked ? 'checked' : ''}>
+                        <span>${team}</span>
+                    `;
+                    teamDropdown.appendChild(teamOption);
+                });
+
+                // Add event listeners to all checkboxes
+                teamDropdown.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.addEventListener('change', () => {
+                        this.handleTeamSelection();
+                    });
+                });
+
+                // Update the display
+                this.updateTeamFilterDisplay();
+            }
+
+            populateMatchTypeFilter(matchTypes) {
+                const filter = document.getElementById('matchTypeFilter');
+                if (!filter) return;
+
+                const currentValue = filter.value;
+                filter.innerHTML = '<option value="">All Match Types</option>';
+
+                matchTypes.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type;
+                    filter.appendChild(option);
                 });
 
                 filter.value = currentValue;
+            }
+
+            handleTeamSelection() {
+                const teamDropdown = document.getElementById('teamDropdown');
+                const allTeamsCheckbox = teamDropdown.querySelector('input[value=""]');
+                const teamCheckboxes = teamDropdown.querySelectorAll('input[value]:not([value=""])');
+
+                if (allTeamsCheckbox && allTeamsCheckbox.checked) {
+                    // If "All Teams" is checked, uncheck others and clear selection
+                    teamCheckboxes.forEach(cb => {
+                        cb.checked = false;
+                        cb.closest('.team-option').classList.remove('selected');
+                    });
+                    this.filters.teams = [];
+                    console.log('All teams selected - clearing team filters');
+                } else {
+                    // If any team is checked, uncheck "All Teams"
+                    if (allTeamsCheckbox) allTeamsCheckbox.checked = false;
+                    
+                    // Update selected teams and visual state
+                    this.filters.teams = [];
+                    teamCheckboxes.forEach(cb => {
+                        if (cb.checked) {
+                            this.filters.teams.push(cb.value);
+                            cb.closest('.team-option').classList.add('selected');
+                        } else {
+                            cb.closest('.team-option').classList.remove('selected');
+                        }
+                    });
+                    
+                    console.log('Teams selected:', this.filters.teams);
+                }
+
+                // Update the filter display
+                this.updateTeamFilterDisplay();
+                
+                // Apply filters with updated selection
+                this.applyFilters();
+            }
+
+            updateTeamFilterDisplay() {
+                const teamFilter = document.getElementById('teamFilter');
+                if (!teamFilter) return;
+
+                // Clear current display
+                teamFilter.innerHTML = '';
+                
+                const option = document.createElement('option');
+                
+                if (this.filters.teams.length === 0) {
+                    option.textContent = 'All Teams (Click to expand)';
+                } else if (this.filters.teams.length === 1) {
+                    option.textContent = `${this.filters.teams[0]} (Click to change)`;
+                } else if (this.filters.teams.length <= 3) {
+                    option.textContent = `${this.filters.teams.join(', ')} (Click to change)`;
+                } else {
+                    option.textContent = `${this.filters.teams.length} teams selected (Click to change)`;
+                }
+                
+                teamFilter.appendChild(option);
+                console.log('Team filter display updated:', option.textContent);
+            }
+
+            clearAllFilters() {
+                console.log('🗑️ Clearing all filters...');
+                
+                // Reset filter state
+                this.filters = {
+                    teams: [],
+                    matchType: '',
+                    playerSearch: ''
+                };
+                
+                // Reset form inputs
+                const matchTypeFilter = document.getElementById('matchTypeFilter');
+                const playerSearch = document.getElementById('playerSearch');
+                
+                if (matchTypeFilter) matchTypeFilter.value = '';
+                if (playerSearch) playerSearch.value = '';
+                
+                // Reset team selection
+                const teamDropdown = document.getElementById('teamDropdown');
+                if (teamDropdown) {
+                    // Check "All Teams" and uncheck others
+                    const allTeamsCheckbox = teamDropdown.querySelector('input[value=""]');
+                    const teamCheckboxes = teamDropdown.querySelectorAll('input[value]:not([value=""])');
+                    
+                    if (allTeamsCheckbox) allTeamsCheckbox.checked = true;
+                    
+                    teamCheckboxes.forEach(cb => {
+                        cb.checked = false;
+                        cb.closest('.team-option').classList.remove('selected');
+                    });
+                }
+                
+                // Update team filter display
+                this.updateTeamFilterDisplay();
+                
+                // Reset sorting
+                this.sortState = { column: null, direction: 'asc' };
+                
+                console.log('✨ All filters cleared');
+                this.applyFilters();
             }
 
             applyFilters() {
                 console.log('🔍 Applying filters...', this.filters);
                 
                 this.filteredData = {};
+                let totalFiltered = 0;
+                let totalOriginal = 0;
                 
                 Object.keys(this.data).forEach(statType => {
                     if (!this.data[statType].data) {
@@ -561,33 +815,71 @@
                         return;
                     }
 
+                    const originalCount = this.data[statType].data.length;
+                    totalOriginal += originalCount;
+
                     this.filteredData[statType] = this.data[statType].data.filter(row => {
                         const team = row.Team || row.team || '';
                         const matchType = row.Match_Type || row.match_type || '';
+                        const player = (row.Player || row.player || '').toLowerCase();
 
-                        const teamMatch = !this.filters.team || team === this.filters.team;
+                        const teamMatch = this.filters.teams.length === 0 || this.filters.teams.includes(team);
                         const matchTypeMatch = !this.filters.matchType || matchType === this.filters.matchType;
+                        const playerMatch = !this.filters.playerSearch || player.includes(this.filters.playerSearch);
 
-                        return teamMatch && matchTypeMatch;
+                        return teamMatch && matchTypeMatch && playerMatch;
                     });
+                    
+                    const filteredCount = this.filteredData[statType].length;
+                    totalFiltered += filteredCount;
+                    
+                    console.log(`${statType}: ${filteredCount}/${originalCount} records`);
+                    
+                    if (this.sortState.column) {
+                        this.applySorting(statType);
+                    }
                 });
 
-                console.log('🔍 Filter results:', Object.keys(this.filteredData).map(k => 
-                    `${k}: ${this.filteredData[k].length}/${this.data[k].data ? this.data[k].data.length : 0}`));
-
+                console.log(`🎯 Total filtered: ${totalFiltered}/${totalOriginal} records`);
                 this.renderCurrentTab();
+            }
+
+            applySorting(statType) {
+                if (!this.sortState.column || !this.filteredData[statType]) return;
+                
+                const column = this.sortState.column;
+                const direction = this.sortState.direction;
+                
+                this.filteredData[statType].sort((a, b) => {
+                    let aValue = a[column] || '';
+                    let bValue = b[column] || '';
+                    
+                    const aNum = parseFloat(aValue);
+                    const bNum = parseFloat(bValue);
+                    
+                    if (!isNaN(aNum) && !isNaN(bNum)) {
+                        return direction === 'asc' ? aNum - bNum : bNum - aNum;
+                    } else {
+                        aValue = aValue.toString().toLowerCase();
+                        bValue = bValue.toString().toLowerCase();
+                        
+                        if (direction === 'asc') {
+                            return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+                        } else {
+                            return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+                        }
+                    }
+                });
             }
 
             switchTab(tabName) {
                 console.log(`🔄 Switching to ${tabName}`);
                 
-                // Update active tab header
                 document.querySelectorAll('.tab-header').forEach(header => {
                     header.classList.remove('active');
                 });
                 document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
 
-                // Update active tab pane
                 document.querySelectorAll('.tab-pane').forEach(pane => {
                     pane.classList.remove('active');
                 });
@@ -601,86 +893,70 @@
                 console.log(`🖼️ Rendering ${this.currentTab} tab...`);
                 
                 const data = this.filteredData[this.currentTab] || [];
-                console.log(`Data for ${this.currentTab}:`, data.length, 'records');
-                
                 this.renderSummary(this.currentTab, data);
                 this.renderTable(this.currentTab, data);
             }
 
             renderSummary(statType, data) {
                 const summaryElement = document.getElementById(`${statType}-summary`);
+                if (!summaryElement) return;
                 
-                if (!summaryElement) {
-                    console.error(`❌ Summary element not found: ${statType}-summary`);
+                if (data.length === 0) {
+                    summaryElement.innerHTML = '<div class="no-data">No data available for the selected filters</div>';
                     return;
                 }
-                
-                let summaryHTML = '';
 
-                if (data.length === 0) {
-                    summaryHTML = '<div class="no-data">No data available for the selected filters</div>';
-                } else {
-                    const totalPlayers = data.length;
-                    const uniqueTeams = new Set(data.map(row => row.Team || row.team)).size;
+                const totalPlayers = data.length;
+                const uniqueTeams = new Set(data.map(row => row.Team || row.team)).size;
 
-                    summaryHTML = `
+                let summaryHTML = `
+                    <div class="stat-item">
+                        <div class="stat-value">${totalPlayers}</div>
+                        <div class="stat-label">Players</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${uniqueTeams}</div>
+                        <div class="stat-label">Teams</div>
+                    </div>
+                `;
+
+                // Add stat-specific summaries
+                if (statType === 'batting' && data.some(row => row.Runs)) {
+                    const totalRuns = data.reduce((sum, row) => sum + (parseInt(row.Runs) || 0), 0);
+                    summaryHTML += `
                         <div class="stat-item">
-                            <div class="stat-value">${totalPlayers}</div>
-                            <div class="stat-label">Total Players</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">${uniqueTeams}</div>
-                            <div class="stat-label">Teams</div>
+                            <div class="stat-value">${totalRuns.toLocaleString()}</div>
+                            <div class="stat-label">Total Runs</div>
                         </div>
                     `;
-
-                    // Add stat-specific summaries
-                    if (statType === 'batting' && data.some(row => row.Runs)) {
-                        const totalRuns = data.reduce((sum, row) => sum + (parseInt(row.Runs) || 0), 0);
-                        summaryHTML += `
-                            <div class="stat-item">
-                                <div class="stat-value">${totalRuns.toLocaleString()}</div>
-                                <div class="stat-label">Total Runs</div>
-                            </div>
-                        `;
-                    } else if (statType === 'bowling' && data.some(row => row.Wkts)) {
-                        const totalWickets = data.reduce((sum, row) => sum + (parseInt(row.Wkts) || 0), 0);
-                        summaryHTML += `
-                            <div class="stat-item">
-                                <div class="stat-value">${totalWickets}</div>
-                                <div class="stat-label">Total Wickets</div>
-                            </div>
-                        `;
-                    } else if (statType === 'fielding' && data.some(row => row.Catches)) {
-                        const totalCatches = data.reduce((sum, row) => sum + (parseInt(row.Catches) || 0), 0);
-                        summaryHTML += `
-                            <div class="stat-item">
-                                <div class="stat-value">${totalCatches}</div>
-                                <div class="stat-label">Total Catches</div>
-                            </div>
-                        `;
-                    }
+                } else if (statType === 'bowling' && data.some(row => row.Wkts)) {
+                    const totalWickets = data.reduce((sum, row) => sum + (parseInt(row.Wkts) || 0), 0);
+                    summaryHTML += `
+                        <div class="stat-item">
+                            <div class="stat-value">${totalWickets}</div>
+                            <div class="stat-label">Total Wickets</div>
+                        </div>
+                    `;
+                } else if (statType === 'fielding' && data.some(row => row.Catches)) {
+                    const totalCatches = data.reduce((sum, row) => sum + (parseInt(row.Catches) || 0), 0);
+                    summaryHTML += `
+                        <div class="stat-item">
+                            <div class="stat-value">${totalCatches}</div>
+                            <div class="stat-label">Total Catches</div>
+                        </div>
+                    `;
                 }
 
                 summaryElement.innerHTML = summaryHTML;
-                console.log(`✅ Summary rendered for ${statType}`);
             }
 
             renderTable(statType, data) {
                 const table = document.getElementById(`${statType}-table`);
-                
-                if (!table) {
-                    console.error(`❌ Table element not found: ${statType}-table`);
-                    return;
-                }
+                if (!table) return;
                 
                 const thead = table.querySelector('thead');
                 const tbody = table.querySelector('tbody');
-                
-                if (!thead || !tbody) {
-                    console.error(`❌ Table head or body not found for ${statType}-table`);
-                    return;
-                }
+                if (!thead || !tbody) return;
 
                 if (data.length === 0) {
                     thead.innerHTML = '';
@@ -688,7 +964,6 @@
                     return;
                 }
 
-                // Get columns (exclude hidden ones)
                 const hiddenColumns = ['Club_ID', 'Club_Name', 'Group', 'Player_ID'];
                 const allColumns = Object.keys(data[0]);
                 const visibleColumns = allColumns.filter(col => !hiddenColumns.includes(col));
@@ -696,15 +971,49 @@
                 // Render header
                 thead.innerHTML = `
                     <tr>
-                        ${visibleColumns.map(col => `<th>${col}</th>`).join('')}
+                        ${visibleColumns.map(col => {
+                            let sortClass = 'sortable';
+                            if (this.sortState.column === col) {
+                                sortClass += this.sortState.direction === 'asc' ? ' sort-asc' : ' sort-desc';
+                            }
+                            return `<th class="${sortClass}" title="Click to sort by ${col}">${col}</th>`;
+                        }).join('')}
                     </tr>
                 `;
 
-                // Render body (limit to first 100 rows for performance)
-                const displayRows = Math.min(data.length, 100);
+                // Setup column sorting
+                thead.querySelectorAll('th').forEach(header => {
+                    header.addEventListener('click', () => {
+                        const columnName = header.textContent.replace(' ⇅', '').replace(' ↑', '').replace(' ↓', '').trim();
+                        
+                        if (this.sortState.column === columnName) {
+                            this.sortState.direction = this.sortState.direction === 'asc' ? 'desc' : 'asc';
+                        } else {
+                            this.sortState.column = columnName;
+                            this.sortState.direction = 'asc';
+                        }
+                        
+                        console.log(`🔄 Sorting by ${columnName} (${this.sortState.direction})`);
+                        this.applyFilters();
+                    });
+                });
+
+                // Render body
+                const displayRows = Math.min(data.length, 200);
+                const searchTerm = this.filters.playerSearch;
+                
                 const rows = data.slice(0, displayRows).map(row => `
                     <tr>
-                        ${visibleColumns.map(col => `<td>${row[col] || ''}</td>`).join('')}
+                        ${visibleColumns.map(col => {
+                            let cellValue = row[col] || '';
+                            
+                            if (searchTerm && (col.toLowerCase().includes('player') || col === 'Player')) {
+                                const regex = new RegExp(`(${searchTerm})`, 'gi');
+                                cellValue = cellValue.toString().replace(regex, '<span class="search-highlight">$1</span>');
+                            }
+                            
+                            return `<td>${cellValue}</td>`;
+                        }).join('')}
                     </tr>
                 `).join('');
                 
@@ -713,8 +1022,6 @@
                 if (data.length > displayRows) {
                     tbody.innerHTML += `<tr><td colspan="${visibleColumns.length}" style="text-align: center; background: #f0f0f0; font-style: italic; padding: 10px;">Showing first ${displayRows} of ${data.length} records</td></tr>`;
                 }
-                
-                console.log(`✅ Table rendered for ${statType}: ${displayRows}/${data.length} rows`);
             }
 
             updateLastUpdated() {
@@ -737,13 +1044,11 @@
 
         // Initialize the app when page loads
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('🌟 DOM loaded, starting app in 500ms...');
-            
-            // Small delay to ensure all elements are properly rendered
+            console.log('🌟 DOM loaded, starting app...');
             setTimeout(() => {
                 const app = new CricketStatsApp();
                 app.init();
-            }, 500);
+            }, 100);
         });
     </script>
 </body>
