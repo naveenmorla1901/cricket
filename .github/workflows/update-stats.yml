@@ -43,17 +43,45 @@ jobs:
 
     - name: Install ChromeDriver
       run: |
-        # Get Chrome version
+        # Get Chrome version (major version only)
         CHROME_VERSION=$(google-chrome --version | cut -d " " -f3 | cut -d "." -f1)
-        echo "Chrome version: $CHROME_VERSION"
+        echo "Chrome major version: $CHROME_VERSION"
         
-        # Download matching ChromeDriver
-        CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION")
-        echo "ChromeDriver version: $CHROMEDRIVER_VERSION"
+        # Use Chrome for Testing API for newer versions (115+)
+        if [ "$CHROME_VERSION" -ge 115 ]; then
+          echo "Using Chrome for Testing API for Chrome $CHROME_VERSION"
+          
+          # Get available ChromeDriver versions
+          CHROMEDRIVER_URL=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json" | \
+            jq -r ".versions[] | select(.version | startswith(\"$CHROME_VERSION.\")) | .downloads.chromedriver[]? | select(.platform==\"linux64\") | .url" | \
+            head -1)
+          
+          if [ -z "$CHROMEDRIVER_URL" ]; then
+            echo "No ChromeDriver found for Chrome $CHROME_VERSION, trying latest stable"
+            CHROMEDRIVER_URL=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions.json" | \
+              jq -r '.channels.Stable.downloads.chromedriver[] | select(.platform=="linux64") | .url')
+          fi
+          
+          echo "ChromeDriver URL: $CHROMEDRIVER_URL"
+          
+          # Download and install ChromeDriver
+          wget -O /tmp/chromedriver.zip "$CHROMEDRIVER_URL"
+          sudo unzip /tmp/chromedriver.zip -d /tmp/
+          sudo mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/
+          sudo chmod +x /usr/local/bin/chromedriver
+          
+        else
+          echo "Using legacy method for Chrome $CHROME_VERSION"
+          # Fallback to old method for older Chrome versions
+          CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION")
+          echo "ChromeDriver version: $CHROMEDRIVER_VERSION"
+          
+          wget -O /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip"
+          sudo unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/
+          sudo chmod +x /usr/local/bin/chromedriver
+        fi
         
-        wget -O /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip"
-        sudo unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/
-        sudo chmod +x /usr/local/bin/chromedriver
+        # Verify installation
         chromedriver --version
 
     - name: Create data directory
